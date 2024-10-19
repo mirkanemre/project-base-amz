@@ -1,4 +1,4 @@
-require('dotenv').config(); // Sadece bir kez
+
 
 var createError = require('http-errors');
 var express = require('express');

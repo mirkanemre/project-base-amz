@@ -1,23 +1,24 @@
 const mongoose = require("mongoose");
-const { version } = require("react");
 
 const schema = mongoose.Schema({
-    email: {type: String, required: true},
-    password: {type: String, required: true},
-    is_active:{type: Boolean, default: true},
+    email: { type: String, required: true, unique: true },  // E-posta benzersiz olmalı
+    password: { type: String, required: true },
+    is_active: { type: Boolean, default: true },
     first_name: String,
     last_name: String,
-    Phone_number: String
-},{
+    phone_number: String // 'Phone_number' -> 'phone_number' olarak düzeltildi
+}, {
     versionKey: false,
-    timetamps :{
+    timestamps: {
         createdAt: "created_at",
         updatedAt: "updated_at"
     }
 });
-class Roles extends mongoose.Model {
 
+// 'Users' modelini tanımlayın (Roles yerine Users olmalı)
+class Users extends mongoose.Model {
+    
 }
 
-schema.loadClass(Roles);
-module.exports = mongoose.model("roles",schema);
+schema.loadClass(Users);
+module.exports = mongoose.model("Users", schema);

@@ -1,21 +1,18 @@
-const { name } = require("ejs");
 const mongoose = require("mongoose");
 
-
 const schema = mongoose.Schema({     
-    name: {type: String, required: true},  
-    is_active:{type: Boolean, default: true},
-    created_by:{ type: mongoose.SchemaTypes.ObjectId}
-},{
+    name: { type: String, required: true },  
+    is_active: { type: Boolean, default: true },
+    created_by: { type: mongoose.SchemaTypes.ObjectId }
+}, {
     versionKey: false,
-    timestamps : {
+    timestamps: {
         createdAt: "created_at",
         updatedAt: "updated_at"
     }
 });
-class Catagories extends mongoose.Model {
 
-}
+class Categories extends mongoose.Model { }
 
-schema.loadClass(Catagories);
-module.exports = mongoose.model("catagories",schema);
+schema.loadClass(Categories);
+module.exports = mongoose.model("Categories", schema);

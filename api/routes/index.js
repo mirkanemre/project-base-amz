@@ -8,8 +8,11 @@ let routes = fs.readdirSync(__dirname);
 for (let route of routes) {
     if (route !== 'index.js' && route.includes('.js')) {
         const routePath = require('./' + route); // Route dosyasını içeri aktarıyor
+        const routeName = route.replace('.js', '');
+        
         if (typeof routePath === 'function') {  // Middleware olduğundan emin olunuyor
-            router.use('/' + route.replace('.js', ''), routePath); // Route'u middleware olarak kullan
+            router.use('/' + routeName, routePath); // Route'u middleware olarak kullan
+            console.log(`Route loaded: /${routeName}`);  // Yüklenen rotayı logla
         }
     }
 }
