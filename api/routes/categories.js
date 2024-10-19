@@ -8,7 +8,7 @@ const CustomError = require('../lib/Error');
 const Enum = require('../config/Enum');
 const AuditLogs =  require("../lib/AuditLogs");
 const RolePrivileges = require("../db/models/RolePrivileges");  // Model yolunu doğru yazdığınızdan emin olun
-
+const logger = require("../lib/logger/LoggerClass");
 
 
 // Kategori listeleme route'u
@@ -44,9 +44,12 @@ router.post("/add", async (req, res) => {
 
         // req.user?.email olmadan deneme için log kaydını düzeltin
         AuditLogs.info("test@example.com", "Categories", "Add", category);
+        logger.info(req.user?.email, "Categories", "Add", category);
 
         Response.successResponse(res, { success: true });  // Başarı durumunda 'res' ekledik
+
     } catch (err) {
+        logger.error(req.user?.email, "Categories", "Add", err);
         Response.errorResponse(res, err);  // Hata durumunda 'res' ekledik
     }  
 });
