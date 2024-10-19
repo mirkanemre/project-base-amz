@@ -1,6 +1,9 @@
 var express = require('express');
 const bcrypt = require("bcrypt-nodejs");
 const is = require("is_js");
+const jwt = require("jwt-simple");
+// config.js dosyanız bir üst dizinde olabilir
+
 
 const Users = require('../db/models/Users');
 const Response = require("../lib/Response");
@@ -8,6 +11,7 @@ const CustomError = require('../lib/Error');
 const Enum = require('../config/Enum');
 const UserRoles = require('../db/models/UserRoles');
 const Roles = require('../db/models/Roles');
+const config = require('../config');  
 var router = express.Router();
 
 // Örnek bir kullanıcı listesi route'u
@@ -248,6 +252,50 @@ router.post("/register", async (req, res) => {
     // Hata yanıtı gönderme
     let errorResponse = Response.errorResponse(res, err);
     return res.status(errorResponse.code).json(errorResponse);
+  }
+});
+
+router.post("/auth", async (req, res) => {
+  try {
+    let { email, password } = req.body;
+
+    // Doğrulama
+    Users.validateFieldBeforeAuth(email, password);
+
+    // Kullanıcıyı bul
+    let user = await Users.findOne({ email });
+
+    // Eğer kullanıcı bulunamazsa hata fırlat
+    if (!user) {
+      throw new CustomError(Enum.HTTP_CODES.UNAUTHORIZED, "Validation Error", "Email or password wrong");
+    }
+
+    // Şifreyi doğrula
+    if (!user.validPassword(password)) {
+      throw new CustomError(Enum.HTTP_CODES.UNAUTHORIZED, "Validation Error", "Email or password wrong");
+    }
+
+    // JWT token oluştur
+    let payload = {
+      id: user._id,
+      exp: parseInt(Date.now() / 1000) + config.JWT.EXPIRE_TIME // Geçerlilik süresi ekle
+    };
+
+    let token = jwt.encode(payload, config.JWT.SECRET);
+
+    // Kullanıcı verileri
+    let userData = {
+      _id: user._id,
+      first_name: user.first_name,
+      last_name: user.last_name
+    };
+
+    // Başarılı yanıt gönder
+    return Response.successResponse(res, { token, user: userData });  // Yanıtın return edilmesini sağla
+
+  } catch (err) {
+    // Hata durumunda hata yanıtı gönder
+    return Response.errorResponse(res, err);  // Yanıtın return edilmesini sağla
   }
 });
 
