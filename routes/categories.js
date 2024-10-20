@@ -17,7 +17,7 @@ router.all("*",auth.authenticate(), (req, res, next) => {
 
 
 // Kategori listeleme route'u
-router.get('/', async (req, res, next) => {
+router.get('/', auth.checkRoles("category_view"), async (req, res, next) => {
 
     try {
         console.log("GET /categories çalıştı");  // Route'un çalışıp çalışmadığını görmek için log ekleyin
@@ -32,7 +32,7 @@ router.get('/', async (req, res, next) => {
 
 
 // Kategori ekleme route'u
-router.post("/add", async (req, res) => {
+router.post("/add", auth.checkRoles("category_add"), async (req, res) => {
     let body = req.body;
     try {
         // body.name boşsa hata fırlat
@@ -61,7 +61,7 @@ router.post("/add", async (req, res) => {
 
 
 // Kategori güncelleme route'u
-router.post("/update", async (req, res) => {
+router.post("/update", auth.checkRoles("category_update"), async (req, res) => {
     let body = req.body;
     try {
         if (!body._id) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST, "Validation Error!", "_id field must be filled");
@@ -106,7 +106,7 @@ router.post("/update", async (req, res) => {
 });
 
 // Role silme route'u
-router.delete("/delete", async (req, res) => {
+router.delete("/delete", auth.checkRoles("category_delete"), async (req, res) => {
     let body = req.body;
     try {
         console.log("Silme isteği alındı. Body:", body); // Body'nin geldiğinden emin olun

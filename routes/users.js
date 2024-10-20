@@ -122,7 +122,7 @@ router.all("*",auth.authenticate(), (req, res, next) => {
 });
 
 // Örnek bir kullanıcı listesi route'u
-router.get('/', async (req, res, ) => {
+router.get('/', auth.checkRoles("users_view"), async (req, res, ) => {
   try {
     let users = await Users.find({});
     
@@ -135,7 +135,7 @@ router.get('/', async (req, res, ) => {
   }
 });
 
-router.post("/add", async (req, res) => {
+router.post("/add", auth.checkRoles("users_add"), async (req, res) => {
   let body = req.body;
   try {
       // Gerekli alanları kontrol et
@@ -153,7 +153,7 @@ router.post("/add", async (req, res) => {
       // Girilen rollerin kontrolü
       let roles = await Roles.find({ _id: { $in: body.roles } });
       if (roles.length === 0) {
-        throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST, "Validation Error!", "Invalid roles provided");
+        throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST, "Validation Error!3", "Invalid roles provided");
       }
 
       // Şifreyi bcrypt ile hashle
@@ -192,7 +192,7 @@ router.post("/add", async (req, res) => {
 });
 
 
-router.post("/update", async (req, res) => {
+router.post("/update", auth.checkRoles("users_update"), async (req, res) => {
   try {
       let body = req.body;
       let updates = {};
@@ -266,7 +266,7 @@ router.post("/update", async (req, res) => {
 });
 
       
-router.delete("/delete", async (req, res) => {
+router.delete("/delete", auth.checkRoles("users_delete"), async (req, res) => {
   try {
       let body = req.body;
 
