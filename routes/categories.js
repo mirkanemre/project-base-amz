@@ -9,6 +9,11 @@ const Enum = require('../config/Enum');
 const AuditLogs =  require("../lib/AuditLogs");
 const RolePrivileges = require("../db/models/RolePrivileges");  // Model yolunu doğru yazdığınızdan emin olun
 const logger = require("../lib/logger/LoggerClass");
+const auth = require("../lib/auth")();
+
+router.all("*",auth.authenticate(), (req, res, next) => {
+    next();
+});
 
 
 // Kategori listeleme route'u

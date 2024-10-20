@@ -13,6 +13,113 @@ const UserRoles = require('../db/models/UserRoles');
 const Roles = require('../db/models/Roles');
 const config = require('../config');  
 var router = express.Router();
+const auth = require("../lib/auth")();
+
+
+
+
+router.post("/register", async (req, res) => {
+  let body = req.body;
+
+  try {
+
+    let user = await Users.findOne({});
+    
+    if (user) {
+      return res.sendStatus(Enum.HTTP_CODES.NOT_FOUND);
+    }
+
+    // Alanların validasyonu
+    if (!body.email) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST, "Validation Error!", "Email field must be filled.");
+    
+    if (is.not.email(body.email)) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST, "Validation Error!", "Invalid email format.");
+    
+    if (!body.password) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST, "Validation Error!", "Password field must be filled.");
+    
+    if (body.password.length < Enum.PASS_LENGTH) 
+      throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST, "Validation Error!", `Password length must be greater than ${Enum.PASS_LENGTH}`);
+
+    // Şifr
+   
+    let password = bcrypt.hashSync(body.password, bcrypt.genSaltSync(8), null);
+
+    // Kullanıcı oluşturma işlemi
+    let createdUser = await Users.create({
+      email: body.email,
+      password,
+      is_active: true,
+      first_name: body.first_name,
+      last_name: body.last_name,
+      phone_number: body.phone_number
+    });
+
+    // Rol oluşturma işlemi
+    let role = await Roles.create({
+      role_name: Enum.SUPER_ADMIN,
+      is_active: true,
+      created_by: createdUser._id
+    });
+
+    await UserRoles.create({
+      role_id: role._id,
+      user_id: createdUser._id
+    })
+   
+    res.status(Enum.HTTP_CODES.CREATED).json({ success: true, message: "Super Admin created successfully." });
+
+  } catch (err) {
+    // Hata yanıtı gönderme
+    let errorResponse = Response.errorResponse(res, err);
+    return res.status(errorResponse.code).json(errorResponse);
+  }
+});
+
+router.post("/auth", async (req, res) => {
+  try {
+
+    let { email, password } = req.body;
+
+    // Doğrulama
+    Users.validateFieldBeforeAuth(email, password);
+
+    // Kullanıcıyı bul
+    let user = await Users.findOne({ email });
+
+    // Eğer kullanıcı bulunamazsa hata fırlat
+    if (!user) throw new CustomError(Enum.HTTP_CODES.UNAUTHORIZED, "Validation Error", "Email or password wrong");
+    
+
+    // Şifreyi doğrula
+    if (!user.validPassword(password)) throw new CustomError(Enum.HTTP_CODES.UNAUTHORIZED, "Validation Error", "Email or password wrong");
+    
+
+    // JWT token oluştur
+    let payload = {
+      id: user._id,
+      exp: parseInt(Date.now() / 1000) + config.JWT.EXPIRE_TIME // Geçerlilik süresi ekle
+    };
+
+    let token = jwt.encode(payload, config.JWT.SECRET);
+
+    // Kullanıcı verileri
+    let userData = {
+      _id: user._id,
+      first_name: user.first_name,
+      last_name: user.last_name
+    };
+
+    // Başarılı yanıt gönder
+    Response.successResponse(res, { token, user: userData });  // Yanıtın return edilmesini sağla
+
+  } catch (err) {
+    let errorResponse =Response.errorResponse(err);
+    res.status(errorResponse.code).json(errorResponse);  // Yanıtın return edilmesini sağla
+  }
+})
+
+router.all("*",auth.authenticate(), (req, res, next) => {
+  next();
+});
 
 // Örnek bir kullanıcı listesi route'u
 router.get('/', async (req, res, ) => {
@@ -195,108 +302,6 @@ router.delete("/delete", async (req, res) => {
       }
   }
 });
-
-router.post("/register", async (req, res) => {
-  let body = req.body;
-
-  try {
-
-    let user = await Users.findOne({});
-    
-    if (user) {
-      return res.sendStatus(Enum.HTTP_CODES.NOT_FOUND);
-    }
-
-    // Alanların validasyonu
-    if (!body.email) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST, "Validation Error!", "Email field must be filled.");
-    
-    if (is.not.email(body.email)) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST, "Validation Error!", "Invalid email format.");
-    
-    if (!body.password) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST, "Validation Error!", "Password field must be filled.");
-    
-    if (body.password.length < Enum.PASS_LENGTH) 
-      throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST, "Validation Error!", `Password length must be greater than ${Enum.PASS_LENGTH}`);
-
-    // Şifr
-    
-    
-    
-   
-    let password = bcrypt.hashSync(body.password, bcrypt.genSaltSync(8), null);
-
-    // Kullanıcı oluşturma işlemi
-    let createdUser = await Users.create({
-      email: body.email,
-      password,
-      is_active: true,
-      first_name: body.first_name,
-      last_name: body.last_name,
-      phone_number: body.phone_number
-    });
-
-    // Rol oluşturma işlemi
-    let role = await Roles.create({
-      role_name: Enum.SUPER_ADMIN,
-      is_active: true,
-      created_by: createdUser._id
-    });
-
-    await UserRoles.create({
-      role_id: role._id,
-      user_id: createdUser._id
-    })
-   
-    res.status(Enum.HTTP_CODES.CREATED).json({ success: true, message: "Super Admin created successfully." });
-
-  } catch (err) {
-    // Hata yanıtı gönderme
-    let errorResponse = Response.errorResponse(res, err);
-    return res.status(errorResponse.code).json(errorResponse);
-  }
-});
-
-router.post("/auth", async (req, res) => {
-  try {
-
-    let { email, password } = req.body;
-
-    // Doğrulama
-    Users.validateFieldBeforeAuth(email, password);
-
-    // Kullanıcıyı bul
-    let user = await Users.findOne({ email });
-
-    // Eğer kullanıcı bulunamazsa hata fırlat
-    if (!user) throw new CustomError(Enum.HTTP_CODES.UNAUTHORIZED, "Validation Error", "Email or password wrong");
-    
-
-    // Şifreyi doğrula
-    if (!user.validPassword(password)) throw new CustomError(Enum.HTTP_CODES.UNAUTHORIZED, "Validation Error", "Email or password wrong");
-    
-
-    // JWT token oluştur
-    let payload = {
-      id: user._id,
-      exp: parseInt(Date.now() / 1000) + config.JWT.EXPIRE_TIME // Geçerlilik süresi ekle
-    };
-
-    let token = jwt.encode(payload, config.JWT.SECRET);
-
-    // Kullanıcı verileri
-    let userData = {
-      _id: user._id,
-      first_name: user.first_name,
-      last_name: user.last_name
-    };
-
-    // Başarılı yanıt gönder
-    Response.successResponse(res, { token, user: userData });  // Yanıtın return edilmesini sağla
-
-  } catch (err) {
-    let errorResponse =Response.errorResponse(err);
-    res.status(errorResponse.code).json(errorResponse);  // Yanıtın return edilmesini sağla
-  }
-})
 
 
 
