@@ -1,8 +1,1 @@
-# Tüm dosyalar için LF satır sonu kullan
-* text=auto
-
-# .sh dosyaları gibi kabuk betikleri için satır sonunu LF olarak zorla
-*.sh eol=lf
-
-# Windows'taki batch dosyaları için satır sonunu CRLF olarak zorla
-*.bat eol=crlf
+* -text
