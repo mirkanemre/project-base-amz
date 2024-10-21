@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const is =  require("is_js");
 const { PASS_LENGTH, HTTP_CODES } =  require("../../config/Enum");
+const {DEFAULT_LANG} = require("../../config"); // Doğru yolu ekleyin
 const CustomError = require("../../lib/Error");
 const bcrypt = require("bcrypt-nodejs");
 
@@ -11,7 +12,8 @@ const schema = mongoose.Schema({
     is_active: { type: Boolean, default: true },
     first_name: String,
     last_name: String,
-    phone_number: String // 'Phone_number' -> 'phone_number' olarak düzeltildi
+    phone_number: String,
+    language: {type: String, default: DEFAULT_LANG} // 'Phone_number' -> 'phone_number' olarak düzeltildi
 }, {
     versionKey: false,
     timestamps: {
