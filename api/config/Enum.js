@@ -14,7 +14,7 @@ module.exports = {
         CONFLICT:  409,
         GONE:   410,
         UNSUPPORTED_MEDIA_TYPE:   415,
-        UNPROCESSIBLE_ENTITY:    422,
+        UNPROCESSABLE_ENTITY:    422,
         TOO_MANY_REQUESTS:  429,
         INT_SERVER_ERROR:  500,
         BAD_GATEWAY:   502

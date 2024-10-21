@@ -9,10 +9,18 @@ const Enum = require('../config/Enum');
 const AuditLogs =  require("../lib/AuditLogs");
 const RolePrivileges = require("../db/models/RolePrivileges");  // Model yolunu doğru yazdığınızdan emin olun
 const logger = require("../lib/logger/LoggerClass");
+const config = require('../config');
+const auth = require("../lib/auth")();
+const i18n =  new (require("../lib/i18n"))(config.DEFAULT_LANG);
+
+
+router.all("*",auth.authenticate(), (req, res, next) => {
+    next();
+});
 
 
 // Kategori listeleme route'u
-router.get('/', async (req, res, next) => {
+router.get('/', auth.checkRoles("category_view"), async (req, res, next) => {
 
     try {
         console.log("GET /categories çalıştı");  // Route'un çalışıp çalışmadığını görmek için log ekleyin
@@ -27,12 +35,19 @@ router.get('/', async (req, res, next) => {
 
 
 // Kategori ekleme route'u
-router.post("/add", async (req, res) => {
+router.post("/add", auth.checkRoles("category_add"), async (req, res) => {
     let body = req.body;
+   
+
     try {
         // body.name boşsa hata fırlat
-        if (!body.name) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST, "Validation Error!", "name field must be filled");
-
+        if (!body.name) {
+            throw new CustomError(
+                Enum.HTTP_CODES.BAD_REQUEST,
+                i18n.translate("COMMON.VALIDATION_ERROR_TITLE", req.user.language), // Bu çalışıyor
+                i18n.translate("COMMON.FIELD_MUST_BE_FILLED", req.user.language, ["name"]) // Burada parametre yerleştirme kontrolü yapılacak
+            );
+        }
         // req.user tanımlı değilse manuel bir ID koyabilirsiniz
         let category = new Categories({
             name: body.name,
@@ -50,17 +65,19 @@ router.post("/add", async (req, res) => {
 
     } catch (err) {
         logger.error(req.user?.email, "Categories", "Add", err);
-        Response.errorResponse(res, err);  // Hata durumunda 'res' ekledik
+        Response.errorResponse(res, err, req.user?.language);  // Hata durumunda 'res' ve 'lang' ekledik
     }  
 });
 
 
 // Kategori güncelleme route'u
-router.post("/update", async (req, res) => {
+router.post("/update", auth.checkRoles("category_update"), async (req, res) => {
     let body = req.body;
     try {
-        if (!body._id) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST, "Validation Error!", "_id field must be filled");
-
+        if (!body._id) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST,
+            i18n.translate("COMMON.VALIDATION_ERROR_TITLE", req.user.language), // Bu çalışıyor
+            i18n.translate("COMMON.FIELD_MUST_BE_FILLED", req.user.language, ["_id"]) // Burada parametre yerleştirme kontrolü yapılacak
+        );
         let updates = {};
 
         if (body.name) updates.name = body.name;
@@ -101,14 +118,16 @@ router.post("/update", async (req, res) => {
 });
 
 // Role silme route'u
-router.delete("/delete", async (req, res) => {
+router.delete("/delete", auth.checkRoles("category_delete"), async (req, res) => {
     let body = req.body;
     try {
         console.log("Silme isteği alındı. Body:", body); // Body'nin geldiğinden emin olun
         
         // _id kontrolü, boşsa hata fırlat
-        if (!body._id) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST, "Validation Error!", "_id field must be filled");
-
+        if (!body._id) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST, 
+        i18n.translate("COMMON.VALIDATION_ERROR_TITLE", req.user.language), // Bu çalışıyor
+        i18n.translate("COMMON.FIELD_MUST_BE_FILLED", req.user.language, ["_id"]) // Burada parametre yerleştirme kontrolü yapılacak
+    );
         // Role ile ilgili yetkileri de sil
         await RolePrivileges.deleteMany({ role_id: body._id });
 

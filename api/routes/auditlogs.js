@@ -3,9 +3,13 @@ const moment = require("moment");
 const Response = require("../lib/Response");  // lib/Response doğru yolda olmalı
 const AuditLogs = require("../db/models/AuditLogs");  // Modeller doğru yolda olmalı
 const router = express.Router();  // Router'ın doğru tanımlanması
+const auth = require("../lib/auth")();
 
+router.all("*",auth.authenticate(), (req, res, next) => {
+    next();
+});
 // Post isteği
-router.post("/", async (req, res) => {
+router.post("/", auth.checkRoles("auditlogs_view"), async (req, res) => {
     try {
         let body = req.body;
         let query = {};
